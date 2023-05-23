@@ -1,6 +1,12 @@
 import socket
 import json
 import time
+import threading
+
+# Hosted Files will be global 
+file_name = "image.png"
+hosted_files = [file_name]
+
 
 def send_udp_broadcast(message, port):
    # Create a UDP socket
@@ -11,57 +17,68 @@ def send_udp_broadcast(message, port):
    broadcast_address = 'localhost'
    broadcast_endpoint = (broadcast_address, port)
    
-   # Send the UDP broadcast message
-   sock.sendto(message.encode(), broadcast_endpoint)
+   while True:
+      # Send the UDP broadcast message
+      sock.sendto(message.encode(), broadcast_endpoint)
+      
+
+def start_tcp_server():
+   host = '127.0.0.1'  # Local host
+   port = 5000
    
-   # Close the socket
-   sock.close()
+   server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   server.bind((host, port))
+   server.listen()
+   
+   print("TCP server started. Listening on {}:{}".format(host, port))
+   
+   while True:
+      # Accept a client connection
+      client_socket, client_address = server.accept()
+      
+      # Handle the client connection in a separate thread
+      client_thread = threading.Thread(target=handle_tcp_connection, args=(client_socket,))
+      client_thread.start()
 
-while True:
-   # Create the JSON array with the hosted file
-   file_name = "image.png"
-   hosted_files = [file_name]
-   json_data = json.dumps(hosted_files)
 
-   # Send UDP broadcast message with the JSON data
-   message = json_data
-   port = 5001  # Replace with the desired port number
-   send_udp_broadcast(message, port)
-
-   # Create a TCP socket
-   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def handle_tcp_connection(client_socket):
+   # Receive data from the client
+   data = client_socket.recv(1024).decode()
 
    try:
-      # Connect to the ChunkUploader on port 5000
-      chunkuploader_address = 'localhost'
-      chunkuploader_port = 5000
-      client_socket.connect((chunkuploader_address, chunkuploader_port))
+      json_data = json.loads(data)
+   except json.JSONDecodeError as e:
+      print("Error parsing JSON data:", str(e))
+      return
 
-      # Prepare the JSON message
-      json_message = json.dumps({"content_name": file_name})
+   requested_content = json_data.get("requestedcontent")
+   if requested_content:
+      print("Requested content:", requested_content)
 
-      # Send the JSON message over the TCP connection
-      client_socket.sendall(json_message.encode())
+      # Send requested File
+      if requested_content in hosted_files:
+            try:
+                with open(requested_content, 'rb') as file:
+                     # Send the file contents back to the client
+                     client_socket.sendfile(file)
 
-      # Receive the file data from ChunkUploader
-      received_data = b""
-      while True:
-         data = client_socket.recv(1024)
-         if not data:
-               break
-         received_data += data
+            except FileNotFoundError:
+               print("File not found:", requested_content)
 
-      # Save the received file
-      with open(file_name, 'wb') as file:
-         file.write(received_data)
-
-      print(f"File '{file_name}' received successfully.")
-
-   except ConnectionRefusedError:
-      print(f"Failed to connect to ChunkUploader at {chunkuploader_address}:{chunkuploader_port}")
-
-   # Close the client socket
+  
    client_socket.close()
 
-   # Wait for 1 minute
-   time.sleep(60)
+
+# Create the JSON array with the hosted file
+json_data = json.dumps(hosted_files)
+
+# Send UDP broadcast message with the JSON data
+message = json_data
+port = 5001  
+
+udp_thread = threading.Thread(target=send_udp_broadcast, args=(message, port))
+udp_thread.start()
+
+# Start the TCP server
+tcp_thread = threading.Thread(target=start_tcp_server)
+tcp_thread.start()
