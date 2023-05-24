@@ -4,22 +4,24 @@ import time
 import threading
 
 # Hosted Files will be global 
-file_name = "image.png"
-hosted_files = [file_name]
+hosted_files = ["image", "pepe"]
 
+udp_port = 5001  
 
-def send_udp_broadcast(message, port): # Chunk Announcer
+def send_udp_broadcast(): # Chunk Announcer
    # Create a UDP socket
    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
    
    # Set the broadcast address and port
    broadcast_address = 'localhost'
-   broadcast_endpoint = (broadcast_address, port)
-   
+   broadcast_endpoint = (broadcast_address, udp_port)
+   data = {"chunks": hosted_files}
+   json_data = json.dumps(data)
+
    while True:
       # Send the UDP broadcast message
-      sock.sendto(message.encode(), broadcast_endpoint)
+      sock.sendto(json_data.encode(), broadcast_endpoint)
       time.sleep(60)
 
 def start_tcp_server():
@@ -55,13 +57,17 @@ def handle_tcp_connection(client_socket):
    requested_content = json_data.get("requestedcontent")
    if requested_content:
       print("Requested content:", requested_content)
-
       # Send requested File
       if requested_content in hosted_files:
             try:
-                with open(requested_content, 'rb') as file:
+                with open(requested_content + ".png", 'rb') as file:
                      # Send the requested file
                      client_socket.sendfile(file)
+                     
+                     # Log the downloaded file
+                     log_entry = f"{time.strftime('%Y-%m-%d %H:%M:%S')}, {requested_content}, {client_socket.getpeername()[0]}\n"
+                     with open("upload_log.txt", "a") as log_file:
+                        log_file.write(log_entry)
 
             except FileNotFoundError:
                print("File not found:", requested_content)
@@ -70,14 +76,8 @@ def handle_tcp_connection(client_socket):
    client_socket.close()
 
 
-# Create the JSON array with the hosted file
-json_data = json.dumps(hosted_files)
 
-# Send UDP broadcast message with the JSON data
-message = json_data
-port = 5001  
-
-udp_thread = threading.Thread(target=send_udp_broadcast, args=(message, port))
+udp_thread = threading.Thread(target=send_udp_broadcast)
 udp_thread.start()
 
 # Start the TCP server

@@ -1,6 +1,6 @@
 import socket
 import json
-import datetime
+import time
 import threading
 
 
@@ -23,13 +23,13 @@ def listen_udp_broadcast(port):
         try:
             # Parse the message contents using JSON parser
             parsed_message = json.loads(message)
-
+            chunks = parsed_message["chunks"]
             # Get the UDP broadcast sender's IP address
             sender_ip = address[0]
 
             # Process the parsed message and sender's IP address
             # Update the content dictionary
-            for file_name in parsed_message:
+            for file_name in chunks:
                 if file_name in content_dictionary:
                     content_dictionary[file_name].add(sender_ip)
                 else:
@@ -42,6 +42,9 @@ def listen_udp_broadcast(port):
 def start_tcp_connection():
     while True:
         file_name = input("please enter the file that you want: ")
+        if file_name not in content_dictionary:
+            print("file not found in peers")
+            continue
         ip_address = content_dictionary[file_name].copy()
         ip_address = next(iter(ip_address)) # get the first ip adress inside set
 
@@ -59,9 +62,9 @@ def start_tcp_connection():
         client.send(json_request.encode('ascii'))
 
         # Recive requested file 
-        recieve(client) 
+        recieve(client, file_name) 
 
-def recieve(client):
+def recieve(client,file_name):
 # Create a buffer to store received data
     buffer = b""
 
@@ -74,8 +77,14 @@ def recieve(client):
         # Append the received data to the buffer
         buffer += data
     
+    # Log Download
+    log_entry = f"{time.strftime('%Y-%m-%d %H:%M:%S')}, {file_name}, {client.getpeername()[0]}\n"
+    with open("download_log.txt", "a") as log_file:
+        log_file.write(log_entry)
+
+
     # Save the received file
-    with open("received_file.png", "wb") as file:
+    with open(file_name + "_received.png", "wb") as file:
         file.write(buffer)
         file.close()
     
