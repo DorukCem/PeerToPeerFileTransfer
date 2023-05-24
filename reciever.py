@@ -34,30 +34,34 @@ def listen_udp_broadcast(port):
                     content_dictionary[file_name].add(sender_ip)
                 else:
                     content_dictionary[file_name] = {sender_ip}
-                    print("Content Dictionary:", content_dictionary)
 
         except json.JSONDecodeError:
             print("Error parsing JSON message:", message)
 
  
-def start_tcp_connection(ip_address):
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((ip_address, 5000))
-    print("Initiating TCP connection with", ip_address)
+def start_tcp_connection():
+    while True:
+        file_name = input("please enter the file that you want: ")
+        ip_address = content_dictionary[file_name].copy()
+        ip_address = next(iter(ip_address)) # get the first ip adress inside set
 
-    message = input("please enter the file that you want: ")
-    request = {
-        "requestedcontent": message
-    }
+        # Start TCP
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((ip_address, 5000))
+        print("Initiating TCP connection with", ip_address)
 
-    json_request = json.dumps(request)
-    client.send(json_request.encode('ascii'))
+        # Request File
+        request = {
+            "requestedcontent": file_name
+        }
 
+        json_request = json.dumps(request)
+        client.send(json_request.encode('ascii'))
 
-    recieve(client)
+        # Recive requested file 
+        recieve(client) 
 
 def recieve(client):
-    
 # Create a buffer to store received data
     buffer = b""
 
@@ -75,9 +79,8 @@ def recieve(client):
         file.write(buffer)
         file.close()
     
-    
     print("File received and saved as 'received_file'")
-
+    client.close()
 
 
 if __name__ == "__main__":
@@ -85,5 +88,5 @@ if __name__ == "__main__":
     udp_thread = threading.Thread(target=listen_udp_broadcast, args=(5001,))
     udp_thread.start()
     
-    tcp_thread = threading.Thread(target=start_tcp_connection, args=('localhost',))
+    tcp_thread = threading.Thread(target=start_tcp_connection)
     tcp_thread.start()

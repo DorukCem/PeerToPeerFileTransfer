@@ -8,7 +8,7 @@ file_name = "image.png"
 hosted_files = [file_name]
 
 
-def send_udp_broadcast(message, port):
+def send_udp_broadcast(message, port): # Chunk Announcer
    # Create a UDP socket
    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -20,7 +20,7 @@ def send_udp_broadcast(message, port):
    while True:
       # Send the UDP broadcast message
       sock.sendto(message.encode(), broadcast_endpoint)
-      
+      time.sleep(60)
 
 def start_tcp_server():
    host = '127.0.0.1'  # Local host
@@ -51,6 +51,7 @@ def handle_tcp_connection(client_socket):
       print("Error parsing JSON data:", str(e))
       return
 
+   # Get Json data 
    requested_content = json_data.get("requestedcontent")
    if requested_content:
       print("Requested content:", requested_content)
@@ -59,13 +60,13 @@ def handle_tcp_connection(client_socket):
       if requested_content in hosted_files:
             try:
                 with open(requested_content, 'rb') as file:
-                     # Send the file contents back to the client
+                     # Send the requested file
                      client_socket.sendfile(file)
 
             except FileNotFoundError:
                print("File not found:", requested_content)
 
-  
+
    client_socket.close()
 
 
