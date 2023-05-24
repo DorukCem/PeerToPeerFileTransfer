@@ -28,7 +28,6 @@ def listen_udp_broadcast(port):
             sender_ip = address[0]
 
             # Process the parsed message and sender's IP address
-            # Update the content dictionary
             for file_name in chunks:
                 if file_name in content_dictionary:
                     content_dictionary[file_name].add(sender_ip)
@@ -53,7 +52,6 @@ def start_tcp_connection():
         client.connect((ip_address, 5000))
         print("Initiating TCP connection with", ip_address)
 
-        # Request File
         request = {
             "requestedcontent": file_name
         }
@@ -61,7 +59,6 @@ def start_tcp_connection():
         json_request = json.dumps(request)
         client.send(json_request.encode('ascii'))
 
-        # Recive requested file 
         recieve(client, file_name) 
 
 def recieve(client,file_name):

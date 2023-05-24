@@ -35,7 +35,6 @@ def start_tcp_server():
    print("TCP server started. Listening on {}:{}".format(host, port))
    
    while True:
-      # Accept a client connection
       client_socket, client_address = server.accept()
       
       # Handle the client connection in a separate thread
@@ -61,7 +60,6 @@ def handle_tcp_connection(client_socket):
       if requested_content in hosted_files:
             try:
                 with open(requested_content + ".png", 'rb') as file:
-                     # Send the requested file
                      client_socket.sendfile(file)
                      
                      # Log the downloaded file
