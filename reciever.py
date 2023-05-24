@@ -3,16 +3,18 @@ import json
 import time
 import threading
 
+# Global variables
+content_dictionary = {}  
+udp_port = 5001
+ip_address = 
 
-content_dictionary = {}  # Global variable
-
-def listen_udp_broadcast(port):
+def listen_udp_broadcast():
     # Create a UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Bind the socket to the specified port
-    bind_address = ('', port)
+    bind_address = (ip_address, udp_port)
     sock.bind(bind_address)
 
     # Listen for UDP broadcast messages
@@ -91,7 +93,7 @@ def recieve(client,file_name):
 
 if __name__ == "__main__":
     # Start listening for UDP broadcast messages in a separate thread
-    udp_thread = threading.Thread(target=listen_udp_broadcast, args=(5001,))
+    udp_thread = threading.Thread(target=listen_udp_broadcast)
     udp_thread.start()
     
     tcp_thread = threading.Thread(target=start_tcp_connection)
