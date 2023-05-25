@@ -6,7 +6,7 @@ import threading
 # Global variables
 content_dictionary = {}  
 udp_port = 5001
-ip_address = 
+local_ip  = "192.168.1.28"
 
 def listen_udp_broadcast():
     # Create a UDP socket
@@ -14,7 +14,7 @@ def listen_udp_broadcast():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Bind the socket to the specified port
-    bind_address = (ip_address, udp_port)
+    bind_address = (local_ip, udp_port)
     sock.bind(bind_address)
 
     # Listen for UDP broadcast messages
@@ -35,6 +35,9 @@ def listen_udp_broadcast():
                     content_dictionary[file_name].add(sender_ip)
                 else:
                     content_dictionary[file_name] = {sender_ip}
+            if chunks:
+                print(content_dictionary)
+                print("please enter the file that you want: ")
 
         except json.JSONDecodeError:
             print("Error parsing JSON message:", message)
