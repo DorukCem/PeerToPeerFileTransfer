@@ -6,7 +6,8 @@ import threading
 # Hosted Files will be global 
 hosted_files = ["image", "pepe"]
 udp_port = 5001  
-ip_address = 
+reciever_ip = "192.168.1.28"
+local_ip = "192.168.1.26"
 
 def send_udp_broadcast(): # Chunk Announcer
    # Create a UDP socket
@@ -14,7 +15,7 @@ def send_udp_broadcast(): # Chunk Announcer
    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
    
    # Set the broadcast address and port
-   broadcast_endpoint = (ip_address, udp_port)
+   broadcast_endpoint = (reciever_ip, udp_port)
    data = {"chunks": hosted_files}
    json_data = json.dumps(data)
 
@@ -24,7 +25,7 @@ def send_udp_broadcast(): # Chunk Announcer
       time.sleep(60)
 
 def start_tcp_server():
-   host = ip_address  
+   host = local_ip 
    port = 5000
    
    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
